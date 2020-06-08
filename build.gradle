@@ -4,6 +4,7 @@ plugins {
 	id 'java'
 	id 'com.palantir.docker' version '0.25.0'
 	id 'com.palantir.docker-run' version '0.25.0'
+	id 'jp.classmethod.aws.cloudformation' version '0.41'
 }
 
 group = 'com.example'
@@ -26,7 +27,7 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
-
+String dockerHubUsernameProperty =findProperty('dockerHubUsername') ?: 'rampravesh07'
 String imageName ="rampravesh07/jenkins-api-demo:${version}"
 
 docker{
@@ -40,4 +41,19 @@ dockerRun{
 	image imageName
 	ports '8081:8081'
 	clean true
+}
+
+aws {
+	region = findProperty('region') ?: 'us-west-2'
+}
+
+cloudFormation {
+	stackName "$project.name-stack"
+	stackParams([
+			SubnetID: findProperty('subnetId') ?: '',
+			ServiceName: project.name,
+			ServiceVersion: project.version,
+			DockerHubUsername: dockerHubUsernameProperty
+	])
+	templateFile project.file("ecs.yml")
 }
